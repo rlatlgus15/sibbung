@@ -14,7 +14,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "시현 AI 가계부",
+  title: "시현 AI 스마트 가계부",
   description: "날짜, 금액, 내용을 기록하는 간단한 가계부",
 };
 
