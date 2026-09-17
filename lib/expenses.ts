@@ -17,6 +17,7 @@ export async function getExpenses(): Promise<{ expenses: Expense[]; error: strin
     .order("id", { ascending: false });
 
   if (error) {
+    console.error("getExpenses failed:", error.message);
     return {
       expenses: [],
       error: "지출 내역을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
@@ -47,6 +48,7 @@ export async function saveExpense(input: {
     .single();
 
   if (error || !data) {
+    console.error("saveExpense failed:", error?.message);
     return { error: "저장하지 못했습니다. 잠시 후 다시 시도해 주세요." };
   }
 
