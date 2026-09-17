@@ -74,11 +74,17 @@ export async function POST(request: NextRequest) {
         description,
       },
     });
-  } catch {
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "";
+    console.error("chat api failed:", detail);
+
+    const missingKey = detail.includes("Gemini API 키가 없습니다");
     return Response.json(
       {
         ok: false,
-        reply: "지금은 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.",
+        reply: missingKey
+          ? "Gemini API 키가 서버에 없어요. 로컬은 .env.local, 배포는 호스팅 설정의 GEMINI_API_KEY를 확인해 주세요."
+          : "지금은 Gemini와 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.",
         expense: null,
       },
       { status: 500 },

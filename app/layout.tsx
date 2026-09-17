@@ -14,7 +14,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "AI 가계부 챗봇",
+  title: "시뿡 스마트 가계부",
   description: "대화로 지출을 기록하는 가계부",
 };
 
