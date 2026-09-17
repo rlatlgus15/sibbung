@@ -15,7 +15,7 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   title: "시뿡 스마트 가계부",
-  description: "대화로 지출을 기록하는 가계부",
+  description: "날짜, 금액, 내용을 기록하는 가계부",
 };
 
 export const viewport: Viewport = {
@@ -26,8 +26,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${notoSansKr.variable} ${geist.variable} h-full antialiased`}>
-      <body className={`${notoSansKr.className} flex min-h-full flex-col`}>{children}</body>
+    <html lang="ko" className={`${notoSansKr.variable} ${geist.variable} h-dvh overflow-hidden antialiased`}>
+      <body className={`${notoSansKr.className} flex h-full min-h-0 flex-col overflow-hidden`}>{children}</body>
     </html>
   );
 }
