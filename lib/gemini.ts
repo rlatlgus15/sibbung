@@ -24,7 +24,7 @@ function extractJson(text: string) {
 }
 
 function getGeminiModel(temperature: number, json: boolean) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     throw new Error("Gemini API 키가 없습니다.");
   }
@@ -56,14 +56,15 @@ function addDays(dateStr: string, days: number) {
 }
 
 export function classifyMessage(message: string): "question" | "expense" {
+  const hasAmount =
+    /\d[\d,]*\s*만\s*원|\d[\d,]*\s*천\s*원|\d[\d,]*\s*원|\d+\s*만원|\d+\s*천원/.test(message);
   const hasQuestionWord =
-    /얼마|뭐|어떻게|얼마나|어디|언제|왜|어떤|몇|더라|알려|총액|합계|\?/.test(message);
-  const hasAmount = /\d[\d,]*\s*만\s*원|\d[\d,]*\s*천\s*원|\d[\d,]*\s*원|\d+\s*만원|\d+\s*천원/.test(
-    message,
-  );
+    /얼마|뭐|어떻게|얼마나|어디|언제|왜|어떤|몇|더라|알려|총액|합계|가장 많이|제일 많이|많이 쓴|총 지출|\?/.test(
+      message,
+    );
 
-  if (hasQuestionWord) return "question";
   if (hasAmount) return "expense";
+  if (hasQuestionWord) return "question";
   return "expense";
 }
 
@@ -108,18 +109,35 @@ export async function answerExpenseQuestion(question: string, expenses: Expense[
   const rows =
     expenses.length === 0
       ? "(기록 없음)"
-      : expenses.map((item) => `${item.date} | ${item.amount}원 | ${item.description}`).join("\n");
+      : expenses
+          .map((item) => {
+            const weekday = new Date(`${item.date}T00:00:00`).toLocaleDateString("ko-KR", {
+              weekday: "short",
+            });
+            return `${item.date} (${weekday}) | ${item.amount}원 | ${item.description}`;
+          })
+          .join("\n");
 
   const model = getGeminiModel(0.5, false);
   const result = await model.generateContent(`당신은 친근한 한국어 가계부 비서입니다.
-아래 지출 기록만 보고 질문에 답하세요. 없는 내용은 지어내지 마세요.
-금액은 천 단위 쉼표로 말해 주세요. 한두 문장, 자연스럽게.
+아래 지출 기록만 보고 질문에 답하세요. 기록에 없는 내용은 지어내지 마세요.
 
-오늘: ${today}
-어제: ${yesterday}
-이번 달: ${monthStart} ~ ${today}
-이번 주(월~일): ${thisMonday} ~ ${addDays(thisMonday, 6)}
-지난 주(월~일): ${lastMonday} ~ ${lastSunday}
+기간:
+- 오늘: ${today}
+- 어제: ${yesterday}
+- 이번 달: ${monthStart} ~ ${today}
+- 이번 주(월~일): ${thisMonday} ~ ${addDays(thisMonday, 6)}
+- 지난 주(월~일): ${lastMonday} ~ ${lastSunday}
+
+답변 규칙:
+- 한두 문장, 말하듯이 친근하게.
+- 금액은 천 단위 쉼표(예: 15,000원).
+- "이번 달 총 지출"은 이번 달 금액을 합산하세요.
+- "가장 많이 쓴 항목"은 내용(description)별로 합산해 가장 큰 항목을 말하세요.
+- "어제 뭐 샀더라"는 날짜가 ${yesterday}인 기록만 말하세요. 오늘(${today}) 기록은 넣지 마세요.
+- "지난주"는 지난 주 월요일~일요일만 합산하세요.
+- "식비"는 점심, 저녁, 아침, 커피, 간식, 밥, 음식처럼 먹는 관련 항목을 묶어 합산하세요.
+- 해당 기간 기록이 없으면 솔직히 없다고 말하세요.
 
 지출 기록(날짜 | 금액 | 내용):
 ${rows}
