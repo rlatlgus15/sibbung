@@ -25,3 +25,30 @@ export async function getExpenses(): Promise<{ expenses: Expense[]; error: strin
 
   return { expenses: data ?? [], error: "" };
 }
+
+export async function saveExpense(input: {
+  date: string;
+  amount: number;
+  description: string;
+}): Promise<{ expense: Expense } | { error: string }> {
+  const date = input.date.trim();
+  const description = input.description.trim();
+  const amount = Number(input.amount);
+
+  if (!date || !description || !Number.isInteger(amount) || amount <= 0) {
+    return { error: "날짜, 금액, 내용을 모두 올바르게 입력해 주세요." };
+  }
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("expenses")
+    .insert({ date, amount, description })
+    .select("id, created_at, date, amount, description")
+    .single();
+
+  if (error || !data) {
+    return { error: "저장하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+  }
+
+  return { expense: data };
+}
